@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Muffin\Trash\Model\Behavior;
@@ -16,6 +17,7 @@ use Cake\ORM\Association;
 use Cake\ORM\Behavior;
 use Cake\ORM\Table;
 use InvalidArgumentException;
+
 use function Cake\Core\pluginSplit;
 
 /**
@@ -71,7 +73,7 @@ class TrashBehavior extends Behavior
             return $events;
         }
 
-        foreach ((array)$config as $eventKey => $event) {
+        foreach ((array) $config as $eventKey => $event) {
             if (is_numeric($eventKey)) {
                 $eventKey = $event;
                 $event = null;
@@ -143,7 +145,7 @@ class TrashBehavior extends Behavior
      */
     public function trash(EntityInterface $entity, array $options = []): bool
     {
-        $primaryKey = (array)$this->_table->getPrimaryKey();
+        $primaryKey = (array) $this->_table->getPrimaryKey();
 
         foreach ($primaryKey as $field) {
             if (!$entity->has($field)) {
@@ -160,9 +162,13 @@ class TrashBehavior extends Behavior
             }
         }
 
-        $entity->set($this->getTrashField(false), new DateTime());
+        if (method_exists($entity, 'patch')) {
+            $entity = $entity->patch([$this->getTrashField(false) => new DateTime()]);
+        } else {
+            $entity->set($this->getTrashField(false), new DateTime());
+        }
 
-        return (bool)$this->_table->save($entity, $options);
+        return (bool) $this->_table->save($entity, $options);
     }
 
     /**
@@ -202,8 +208,7 @@ class TrashBehavior extends Behavior
             }
 
             if (
-                $expression instanceof IdentifierExpression
-                && in_array($expression->getIdentifier(), $fieldIdentifiers, true)
+                $expression instanceof IdentifierExpression && in_array($expression->getIdentifier(), $fieldIdentifiers, true)
             ) {
                 $addCondition = false;
 
@@ -211,8 +216,7 @@ class TrashBehavior extends Behavior
             }
 
             if (
-                $expression instanceof FieldInterface
-                && in_array($expression->getField(), $fieldIdentifiers, true)
+                $expression instanceof FieldInterface && in_array($expression->getField(), $fieldIdentifiers, true)
             ) {
                 $addCondition = false;
             }
@@ -231,8 +235,8 @@ class TrashBehavior extends Behavior
     public function findOnlyTrashed(SelectQuery $query, array $options): SelectQuery
     {
         return $query
-            ->applyOptions(['skipAddTrashCondition' => true])
-            ->andWhere([$this->getTrashField() . ' IS NOT' => null]);
+                ->applyOptions(['skipAddTrashCondition' => true])
+                ->andWhere([$this->getTrashField() . ' IS NOT' => null]);
     }
 
     /**
@@ -287,7 +291,11 @@ class TrashBehavior extends Behavior
             if ($entity->isDirty()) {
                 throw new CakeException('Can not restore from a dirty entity.');
             }
-            $entity->set($data, ['guard' => false]);
+            if (method_exists($entity, 'patch')) {
+                $entity = $entity->patch($data, ['guard' => false]);
+            } else {
+                $entity->set($data, ['guard' => false]);
+            }
 
             return $this->_table->save($entity, $options);
         }
@@ -317,9 +325,9 @@ class TrashBehavior extends Behavior
                     }
                 } else {
                     /** @var list<string> $foreignKey */
-                    $foreignKey = (array)$association->getForeignKey();
+                    $foreignKey = (array) $association->getForeignKey();
                     /** @var list<string> $bindingKey */
-                    $bindingKey = (array)$association->getBindingKey();
+                    $bindingKey = (array) $association->getBindingKey();
                     $conditions = array_combine($foreignKey, $entity->extract($bindingKey));
 
                     foreach ($association->find('withTrashed')->where($conditions) as $related) {
@@ -383,11 +391,7 @@ class TrashBehavior extends Behavior
     protected function _isRecursable(Association $association, Table $table): bool
     {
         return (
-                $association->getTarget()->hasBehavior('Trash')
-                || $association->getTarget()->hasBehavior(static::class)
-            )
-            && $association->isOwningSide($table)
-            && $association->getDependent()
-            && $association->getCascadeCallbacks();
+            $association->getTarget()->hasBehavior('Trash') || $association->getTarget()->hasBehavior(static::class)
+            ) && $association->isOwningSide($table) && $association->getDependent() && $association->getCascadeCallbacks();
     }
 }
