@@ -1,9 +1,5 @@
 # Trash
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/UseMuffin/Trash/ci.yml?style=flat-square
-)](https://github.com/UseMuffin/Trash/actions?query=workflow%3ACI+branch%3Amaster)
-[![Coverage](https://img.shields.io/codecov/c/github/UseMuffin/Trash/master.svg?style=flat-square)](https://codecov.io/github/UseMuffin/Trash)
-[![Total Downloads](https://img.shields.io/packagist/dt/muffin/trash.svg?style=flat-square)](https://packagist.org/packages/muffin/trash)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
 Adds "soft"-delete support to CakePHP tables.
@@ -13,7 +9,7 @@ Adds "soft"-delete support to CakePHP tables.
 Using [Composer][composer]:
 
 ```
-composer require muffin/trash
+composer require vandalorumrex/trash
 ```
 
 You then need to load the plugin. You can use the shell command:
@@ -115,13 +111,12 @@ To ensure your PRs are considered for upstream, you MUST follow the CakePHP codi
 
 ## Bugs & Feedback
 
-http://github.com/usemuffin/trash/issues
+http://github.com/vandalorumrex/trash/issues
 
 ## License
 
-Copyright (c) 2015-present, [Use Muffin][muffin] and licensed under [The MIT License][mit].
+This library is license under the MIT License (MIT). Please see License File for more information.
 
-[cakephp]:http://cakephp.org
-[composer]:http://getcomposer.org
-[mit]:http://www.opensource.org/licenses/mit-license.php
-[muffin]:http://usemuffin.com
+## Credits
+
+This library was forked from [UseMuffin Trash's](https://github.com/UseMuffin) on Github https://github.com/UseMuffin/Trash.
