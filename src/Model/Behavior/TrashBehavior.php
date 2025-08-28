@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Muffin\Trash\Model\Behavior;
@@ -9,6 +8,7 @@ use Cake\Core\Configure;
 use Cake\Core\Exception\CakeException;
 use Cake\Database\Expression\FieldInterface;
 use Cake\Database\Expression\IdentifierExpression;
+use Cake\Database\Expression\QueryExpression;
 use Cake\Database\Query\SelectQuery;
 use Cake\Datasource\EntityInterface;
 use Cake\Event\EventInterface;
@@ -16,8 +16,8 @@ use Cake\I18n\DateTime;
 use Cake\ORM\Association;
 use Cake\ORM\Behavior;
 use Cake\ORM\Table;
+use Closure;
 use InvalidArgumentException;
-
 use function Cake\Core\pluginSplit;
 
 /**
@@ -25,7 +25,7 @@ use function Cake\Core\pluginSplit;
  */
 class TrashBehavior extends Behavior
 {
-    public const AFTER_DELETE_EVENT_OPTION = 'trash';
+    public const string AFTER_DELETE_EVENT_OPTION = 'trash';
 
     /**
      * Default configuration.
@@ -73,7 +73,7 @@ class TrashBehavior extends Behavior
             return $events;
         }
 
-        foreach ((array) $config as $eventKey => $event) {
+        foreach ((array)$config as $eventKey => $event) {
             if (is_numeric($eventKey)) {
                 $eventKey = $event;
                 $event = null;
@@ -139,13 +139,13 @@ class TrashBehavior extends Behavior
      * Trash given entity.
      *
      * @param \Cake\Datasource\EntityInterface $entity EntityInterface.
-     * @param array $options Trash operation options.
+     * @param array<string, mixed> $options Trash operation options.
      * @return bool
      * @throws \Cake\Core\Exception\CakeException if no primary key is set on entity.
      */
     public function trash(EntityInterface $entity, array $options = []): bool
     {
-        $primaryKey = (array) $this->_table->getPrimaryKey();
+        $primaryKey = (array)$this->_table->getPrimaryKey();
 
         foreach ($primaryKey as $field) {
             if (!$entity->has($field)) {
@@ -168,7 +168,7 @@ class TrashBehavior extends Behavior
             $entity->set($this->getTrashField(false), new DateTime());
         }
 
-        return (bool) $this->_table->save($entity, $options);
+        return (bool)$this->_table->save($entity, $options);
     }
 
     /**
@@ -254,15 +254,14 @@ class TrashBehavior extends Behavior
     /**
      * Marks all rows matching `$conditions` as `trashed`.
      *
-     * @param mixed $conditions Conditions to be used, accepts anything Query::where()
-     * can take.
+     * @param \Cake\Database\Expression\QueryExpression|\Closure|array|string|null $conditions Conditions to be used, accepts anything Query::where() can take.
      * @return int Count Returns the affected rows.
      */
-    public function trashAll(mixed $conditions): int
+    public function trashAll(array|QueryExpression|Closure|string|null $conditions): int
     {
         return $this->_table->updateAll(
             [$this->getTrashField(false) => new DateTime()],
-            $conditions
+            $conditions,
         );
     }
 
@@ -280,7 +279,7 @@ class TrashBehavior extends Behavior
      * Restores all (or given) trashed row(s).
      *
      * @param \Cake\Datasource\EntityInterface|null $entity to restore.
-     * @param array $options Restore operation options (only applies when restoring a specific entity).
+     * @param array<string, mixed> $options Restore operation options (only applies when restoring a specific entity).
      * @return \Cake\Datasource\EntityInterface|int|false
      */
     public function restoreTrash(?EntityInterface $entity = null, array $options = []): false|int|EntityInterface
@@ -307,12 +306,12 @@ class TrashBehavior extends Behavior
      * Restore an item from trashed status and all its related data
      *
      * @param \Cake\Datasource\EntityInterface|null $entity Entity instance
-     * @param array $options Restore operation options (only applies when restoring a specific entity).
+     * @param array<string, mixed> $options Restore operation options (only applies when restoring a specific entity).
      * @return \Cake\Datasource\EntityInterface|int|bool
      */
     public function cascadingRestoreTrash(
         ?EntityInterface $entity = null,
-        array $options = []
+        array $options = [],
     ): bool|int|EntityInterface {
         $result = $this->restoreTrash($entity, $options);
 
@@ -325,9 +324,9 @@ class TrashBehavior extends Behavior
                     }
                 } else {
                     /** @var list<string> $foreignKey */
-                    $foreignKey = (array) $association->getForeignKey();
+                    $foreignKey = (array)$association->getForeignKey();
                     /** @var list<string> $bindingKey */
-                    $bindingKey = (array) $association->getBindingKey();
+                    $bindingKey = (array)$association->getBindingKey();
                     $conditions = array_combine($foreignKey, $entity->extract($bindingKey));
 
                     foreach ($association->find('withTrashed')->where($conditions) as $related) {
@@ -354,6 +353,7 @@ class TrashBehavior extends Behavior
      */
     public function getTrashField(bool $aliased = true): string
     {
+        /** @var string|null $field */
         $field = $this->getConfig('field');
 
         if ($field === null) {
@@ -364,7 +364,7 @@ class TrashBehavior extends Behavior
                     break;
                 }
             }
-
+            /** @var string|null $field */
             $field ??= Configure::read('Muffin/Trash.field');
 
             if ($field === null) {
